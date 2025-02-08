@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, request
+from flask import Flask, render_template, redirect, url_for, session, request, jsonify
 from authlib.integrations.flask_client import OAuth
 from config import SessionLocal, AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_CALLBACK_URL, AUTH0_LOGOUT_REDIRECT
 from models import User
@@ -59,6 +59,26 @@ def profile():
     if not user_info:
         return redirect(url_for("login"))
     return render_template("profile.html", user=user_info)
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    user_message = request.json.get('message', '')
+
+    # Simple AI response (this can be replaced with a real chatbot model)
+    responses = {
+        "hello": "Hi there! How can I assist you?",
+        "how are you": "I'm just a bot, but I'm doing great! How about you?",
+        "what is my balance": "Your current balance is $240,081.",
+        "bye": "Goodbye! Have a great day!"
+    }
+    
+    bot_response = responses.get(user_message.lower(), "I'm still learning, but I'll do my best to help!")
+    
+    return jsonify({"response": bot_response})
 
 # 🔹 Logout Route
 @app.route("/logout")

@@ -101,38 +101,37 @@
     </div>
 
     <script>
+        function goBack() {
+            window.location.href = '/';
+        }
+
         function sendMessage() {
             const inputField = document.getElementById('chat-input');
             const message = inputField.value.trim();
             if (message === "") return;
-    
+
             const chatContainer = document.getElementById('chat-container');
-    
+
             // Append user message
             const userMessage = document.createElement('div');
             userMessage.classList.add('chat-message', 'user-message');
             userMessage.textContent = message;
             chatContainer.appendChild(userMessage);
-    
-            // Send request to Flask
-            fetch('/send_message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message })
-            })
-            .then(response => response.json())
-            .then(data => {
+
+            // Auto-reply from bot
+            setTimeout(() => {
                 const botMessage = document.createElement('div');
                 botMessage.classList.add('chat-message', 'bot-message');
-                botMessage.textContent = data.response;
+                botMessage.textContent = "I'm still learning, but I'll do my best to help!";
                 chatContainer.appendChild(botMessage);
+                
                 chatContainer.scrollTop = chatContainer.scrollHeight;
-            });
-    
+            }, 1000);
+
             inputField.value = "";
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-    
+
         function handleKeyPress(event) {
             if (event.key === "Enter") {
                 sendMessage();
