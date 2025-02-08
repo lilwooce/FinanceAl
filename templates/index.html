@@ -6,146 +6,394 @@
     <title>Finance Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: white;
-            color: #2E1A47;
-        }
-        .header {
-            background: linear-gradient(135deg, #2E1A47, #4B2C63);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 0 0 30px 30px;
-        }
-        .card {
-            border-radius: 20px;
-            margin: 10px 0;
-            background-color: white;
-            color: #2E1A47;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .icon {
-            font-size: 40px;
-            color: #2E1A47;
-        }
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-        }
-        .nav-icon {
-            text-align: center;
-            font-size: 14px;
-            color: #2E1A47;
-        }
-        .chatbot {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4B2C63;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-            align-items: center;
-            cursor: pointer;
-        }
-        .chatbot-icon {
-            font-size: 24px;
-            margin-right: 10px;
-        }
-        .chatbot-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-        .chatbot-close {
-            cursor: pointer;
-            font-size: 18px;
-            margin-left: 10px;
-        }
-        .chatbot-small {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4B2C63;
-            color: white;
-            padding: 10px;
-            border-radius: 50%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            cursor: pointer;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/styles.css">
 </head>
 <body>
-    <div class="header">
-        <h3>$240,081</h3>
-        <p>Monthly Cash Flow</p>
-        <div class="d-flex justify-content-around">
-            <p>+ $400,000 Income</p>
-            <p>- $159,919 Expenses</p>
-        </div>
-    </div>
-    
-    <div class="container mt-3">
-        <h5>Spend Analysis</h5>
-        <div class="d-flex justify-content-between">
-            <div class="card p-2 text-center">
-                <i class="bi bi-cup icon"></i>
-                <p>32%<br>Food & Drinks</p>
+    <header class="app-header">
+        <h1>FinanceAL</h1>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="header">
+            <h3 id="net-cash-flow">$0</h3>
+            <p>Monthly Cash Flow</p>
+            <div class="d-flex justify-content-around">
+                <p>+ <span id="monthly-income">$0</span> Income</p>
+                <p>- <span id="monthly-expenses">$0</span> Expenses</p>
             </div>
-            <div class="card p-2 text-center">
-                <i class="bi bi-controller icon"></i>
-                <p>17%<br>Entertainment</p>
+        </div>        
+
+        <div class="container mt-3">
+            <h5 class="mt-3">Add Transaction</h5>
+            <input type="text" id="category" placeholder="Category (e.g., Rent, Food)">
+            <input type="number" id="amount" placeholder="Amount">
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+            <button id="add-transaction-btn" onclick="addTransaction()">
+                <span id="add-transaction-text">Add Transaction</span>
+                <span id="add-transaction-spinner" class="spinner-border spinner-border-sm d-none"></span>
+            </button>
+        </div>
+        
+        <div class="container mt-3">
+            <div class="container mt-3">
+                <h5 class="mt-3">Spend Analysis</h5>
+                <ul id="spend-analysis-list"></ul>
+
+                <canvas id="spendChart" style="max-width: 400px; max-height: 300px;"></canvas> <!-- 🔹 Smaller Chart -->
+
+            
             </div>
-            <div class="card p-2 text-center">
-                <i class="bi bi-bag icon"></i>
-                <p>16%<br>Shopping</p>
+            <h5 class="mt-3">Transactions</h5>
+            <div class="card p-3" id="transaction-container">
+                <p class="text-muted">No transactions yet.</p>
+            </div>
+
+            <!-- Edit Transaction Modal -->
+            <div id="editModal" class="modal fade" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Transaction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="edit-transaction-id">
+                            
+                            <label>Original Description:</label>
+                            <input type="text" id="edit-description" class="form-control" disabled> <!-- ✅ Show original input -->
+                            
+                            <label>Category:</label>
+                            <input type="text" id="edit-category" class="form-control">
+                            
+                            <label>Amount:</label>
+                            <input type="number" id="edit-amount" class="form-control">
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button class="btn btn-primary" onclick="saveTransactionEdit()">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="nav-bar">
+            <div class="nav-icon">🏠<br><a href="/">Home</a></div>
+            <div class="nav-icon">📊<br><a href="/goals">Goals</a></div>
+            <div class="nav-icon">💬<br><a href="/chat">Chat</a></div>
+            <div class="nav-icon">📚<br><a href="/forum">Forum</a></div>  <!-- Added Forum Button -->
+            <div class="nav-icon">👤<br>
+                {% if session['user'] %}
+                    <a href="/profile">Profile</a> | <a href="/logout">Logout</a>
+                {% else %}
+                    <a href="/login">Login</a>
+                {% endif %}
             </div>
         </div>
-        <h5 class="mt-3">Transactions</h5>
-        <div class="card p-3">
-            <p><b>Zomato</b> - Today, 6:32 PM <span class="text-danger">-$420</span></p>
+        
+        
+        
+
+        <div class="chatbot" id="chatbot" onclick="window.location.href='/chat'">
+            <div class="chatbot-header">
+                <span>Hi, I'm Al, how can I help you today!</span>
+                <span class="chatbot-close" onclick="event.stopPropagation(); minimizeChatbot();">✖</span>
+            </div>
         </div>
-    </div>
-    
-    <div class="nav-bar">
-        <div class="nav-icon">🏠<br><a href="/">Home</a></div>
-        <div class="nav-icon">💳<br><a href="/wallets">Wallets</a></div>
-        <div class="nav-icon">📊<br><a href="/budget">Budget</a></div>
-        <div class="nav-icon">👤<br>
-            {% if session['user'] %}
-                <a href="/profile">Profile</a> | <a href="/logout">Logout</a>
-            {% else %}
-                <a href="/login">Login</a>
-            {% endif %}
+        
+        <div class="chatbot-small" id="chatbot-small" onclick="maximizeChatbot()">
+            <i class="bi bi-chat-dots"></i>
         </div>
     </div>
 
-    <div class="chatbot" id="chatbot" onclick="window.location.href='/chat'">
-        <div class="chatbot-header">
-            <span>Hi, I'm Al, how can I help you today!</span>
-            <span class="chatbot-close" onclick="event.stopPropagation(); minimizeChatbot();">✖</span>
-        </div>
-    </div>
-    
-    <div class="chatbot-small" id="chatbot-small" onclick="maximizeChatbot()">
-        <i class="bi bi-chat-dots"></i>
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        setTimeout(() => {
-            document.getElementById('chatbot').style.display = 'flex';
-        }, 3000);
+        function setIncome() {
+            const income = document.getElementById('income').value;
+            const btn = document.getElementById("save-income-btn");
+            const text = document.getElementById("save-income-text");
+            const spinner = document.getElementById("save-income-spinner");
+
+            btn.disabled = true;
+            text.classList.add("d-none");
+            spinner.classList.remove("d-none");
+
+            fetch('/set_income', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ income: income })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                loadIncome();
+                updateBudgetTable(data.budget); // ✅ Update AI budget table
+                document.getElementById("financial-advice").innerText = data.financial_advice; // ✅ Update financial advice
+            })
+            .finally(() => {
+                btn.disabled = false;
+                text.classList.remove("d-none");
+                spinner.classList.add("d-none");
+            });
+        }
+
+
+        function loadIncome() {
+            fetch('/get_income')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('current-income').innerText = "Current Income: $" + data.income;
+            });
+        }
+
+        function addTransaction() {
+            const userCategoryInput = document.getElementById('category').value.trim(); // ✅ User input is description
+            const amount = document.getElementById('amount').value.trim();
+            const type = document.getElementById('type').value.trim();
+
+            if (!userCategoryInput || !amount) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            const btn = document.getElementById("add-transaction-btn");
+            const text = document.getElementById("add-transaction-text");
+            const spinner = document.getElementById("add-transaction-spinner");
+
+            btn.disabled = true;
+            text.classList.add("d-none");
+            spinner.classList.remove("d-none");
+
+            fetch('/add_transaction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: userCategoryInput,  // ✅ Save user input as description
+                    amount,
+                    type
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                loadTransactions(); // ✅ Refresh transactions
+            })
+            .finally(() => {
+                btn.disabled = false;
+                loadFinancialSummary();
+                text.classList.remove("d-none");
+                spinner.classList.add("d-none");
+            });
+        }
+
+        function loadTransactions() {
+            fetch('/get_transactions')
+            .then(response => response.json())
+            .then(data => {
+                const transactionContainer = document.getElementById("transaction-container");
+                transactionContainer.innerHTML = "";  // Clear previous transactions
+
+                if (data.length === 0) {
+                    transactionContainer.innerHTML = `<p class="text-muted">No transactions yet.</p>`;
+                    return;
+                }
+
+                data.forEach(transaction => {
+                    const transactionElement = document.createElement("div");
+                    transactionElement.classList.add("transaction-item", "p-2", "border", "rounded", "mb-2", "d-flex", "justify-content-between", "align-items-center");
+
+                    transactionElement.innerHTML = `
+                        <div>
+                            <b>Category:</b> ${transaction.category} <br>
+                            <small class="text-muted"><b>Description:</b> ${transaction.description}</small> <!-- ✅ Show user's original input -->
+                            <br>
+                            <span class="${transaction.type === 'income' ? 'text-success' : 'text-danger'}">
+                                ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}
+                            </span>
+                        </div>
+                        <div>
+                            <button class="btn btn-warning btn-sm me-2" onclick="editTransaction(${transaction.id}, '${transaction.category}', ${transaction.amount}, '${transaction.description}')">
+                                ✏️ Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTransaction(${transaction.id})">
+                                ❌ Delete
+                            </button>
+                        </div>
+                    `;
+
+                    transactionContainer.appendChild(transactionElement);
+                });
+            });
+        }
+
+        function editTransaction(id, category, amount, description) {
+            document.getElementById("edit-transaction-id").value = id;
+            document.getElementById("edit-category").value = category;
+            document.getElementById("edit-amount").value = amount;
+            document.getElementById("edit-description").value = description; // ✅ Show original input
+
+            const editModal = new bootstrap.Modal(document.getElementById("editModal"));
+            editModal.show();
+        }
+
+
+        function saveTransactionEdit() {
+            const id = document.getElementById("edit-transaction-id").value;
+            const category = document.getElementById("edit-category").value.trim();
+            const amount = document.getElementById("edit-amount").value.trim();
+
+            if (!category || !amount) {
+                alert("Category and amount cannot be empty!");
+                return;
+            }
+
+            fetch('/edit_transaction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, category, amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                loadTransactions();  // ✅ Refresh the transaction list
+                document.getElementById("editModal").click();  // ✅ Close modal
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
+
+        function deleteTransaction(id) {
+            if (!confirm("Are you sure you want to delete this transaction?")) return;
+
+            fetch('/delete_transaction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                loadTransactions();
+            });
+        }
+
+        function loadSpendAnalysis() {
+            fetch('/get_spend_analysis')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "error") {
+                    console.log(data.message);
+                    return;
+                }
+
+                const spendList = document.getElementById("spend-analysis-list");
+                spendList.innerHTML = "";
+
+                let labels = [];
+                let values = [];
+                let colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4CAF50", "#9C27B0", "#FF9800"];
+
+                let categoryIndex = 0;
+
+                for (let category in data.categories) {
+                    labels.push(category);
+                    values.push(data.categories[category]);
+
+                    const li = document.createElement("li");
+                    li.textContent = `${category}: $${data.categories[category].toFixed(2)}`;
+                    spendList.appendChild(li);
+
+                    categoryIndex = (categoryIndex + 1) % colors.length;  // Cycle through colors
+                }
+
+                createSpendChart(labels, values, colors);
+            });
+        }
+
+        function createSpendChart(labels, values, colors) {
+            const ctx = document.getElementById("spendChart").getContext("2d");
+
+            // ✅ Ensure previous chart exists before trying to destroy it
+            if (window.spendChart) {
+                try {
+                    window.spendChart.destroy();
+                } catch (error) {
+                    console.warn("Error destroying previous chart:", error);
+                }
+            }
+
+            // ✅ Create a new chart
+            window.spendChart = new Chart(ctx, {
+                type: "pie",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadFinancialSummary() {
+            fetch('/get_financial_summary')
+            .then(response => response.json())
+            .then(data => {
+                let income = data.income || 0;  // Default to $0 if no data
+                console.log(`income is ${income}`)
+                let expenses = data.expenses || 0;  // Default to $0 if no data
+                let netCashFlow = income - expenses;
+                ratio = income / expenses
+
+                // Format numbers with commas for readability
+                document.getElementById('monthly-income').innerText = `$${income.toLocaleString()}`;
+                document.getElementById('monthly-expenses').innerText = `$${expenses.toLocaleString()}`;
+                document.getElementById('net-cash-flow').innerText = `$${netCashFlow.toLocaleString()}`;
+                updateCashFlow(ratio);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            loadTransactions();
+            loadSpendAnalysis();
+            loadFinancialSummary();
+
+            // ✅ Get the current page title
+            const pageTitle = document.title;
+
+            // ✅ Check if we're on the chat page (don't show chatbot)
+            if (!window.location.pathname.includes("chat")) {
+                setTimeout(() => {
+                    fetch('/generate_greeting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: pageTitle })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const chatbot = document.getElementById('chatbot');
+                        chatbot.querySelector('.chatbot-header span').innerText = data.greeting;
+                        chatbot.style.display = 'flex'; // ✅ Show chatbot
+                    })
+                    .catch(error => console.error("Error fetching greeting:", error));
+                }, 3000);
+            }
+        });
 
         function minimizeChatbot() {
             document.getElementById('chatbot').style.display = 'none';
@@ -157,8 +405,25 @@
             document.getElementById('chatbot-small').style.display = 'none';
         }
 
-        function openChatPage() {
-            window.location.href = 'chat.html';
+        function updateCashFlow(ratio) {
+            // Get the net cash flow element
+            const netCashFlow = document.getElementById("net-cash-flow");
+            // Function to update color based on ratio (0 to 1 scale)
+            function updateCashFlowColor(ratio) {
+                if (ratio >= 2.0) {
+                    // Green (income >= 2 times expenses)
+                    netCashFlow.style.color = "#00FF6A"; // Bright Green
+                } else if (ratio >= 1.0) {
+                    // Yellow (income is between 100% and 200% of expenses)
+                    netCashFlow.style.color = "#FFEB3B"; // Yellow
+                } else {
+                    // Red (income is less than expenses)
+                    netCashFlow.style.color = "#FF3D3D"; // Red
+                }
+            }
+
+            // Update the color based on the ratio
+            updateCashFlowColor(ratio);
         }
     </script>
 </body>

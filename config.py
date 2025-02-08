@@ -18,6 +18,7 @@ DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PO
 
 # Create engine
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, isolation_level="READ COMMITTED")
+print(engine)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -35,3 +36,7 @@ AUTH0_CLIENT_ID = "FgUCBvkEtKhZp7S5xQR1BN4WZbAKm510"
 AUTH0_CLIENT_SECRET = "qfz3YruO9Y269PXjALNOBQMa8r25hK53i2jIneZOyAXC3f75tefL4eRNnjxLVXjC"
 AUTH0_CALLBACK_URL = "http://127.0.0.1:5000/callback"
 AUTH0_LOGOUT_REDIRECT = "http://127.0.0.1:5000/"
+
+# OpenAI API Key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+

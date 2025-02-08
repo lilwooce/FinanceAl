@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum - FinanceAl</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/styles.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            padding-bottom: 80px; /* Adds space for the fixed navbar at the bottom */
+        }
+
+        .container {
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background-color: #4B2C63;
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #42225a;
+            transform: scale(1.05);
+        }
+
+        .list-group-item {
+            transition: background-color 0.3s ease;
+        }
+
+        .list-group-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .nav-icon {
+            text-align: center;
+            font-size: 14px;
+            color: white;
+        }
+
+        .nav-icon:hover {
+            color: #FFD700;
+        }
+
+        /* Recolor the links and remove underline */
+        a {
+            color: #4B2C63; /* Set the color */
+            text-decoration: none; /* Remove the underline */
+            transition: color 0.3s ease; /* Smooth transition effect */
+        }
+
+        a:hover {
+            color: #2E1A47; /* Darken the color on hover */
+            text-decoration: underline; /* Add underline on hover */
+        }
+
+        /* Adjustments for the fixed navbar */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-bar .nav-icon {
+            text-align: center;
+            font-size: 14px;
+            color: #2E1A47;
+        }
+
+        .nav-bar .nav-icon:hover {
+            color: #FFD700;
+        }
+
+        .chatbot {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: #4B2C63;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1100;
+        }
+
+        .chatbot-small {
+            display: none;
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: #4B2C63;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 1100;
+        }
+
+        .chatbot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .chatbot-close {
+            cursor: pointer;
+            font-size: 18px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="app-header">
+        <h1>FinanceAL</h1>
+    </header>
+
+    <div class="container">
+        <h1>Forum</h1>
+        <a href="{{ url_for('new_post') }}" class="btn btn-primary">Create New Post</a>
+        <hr>
+        <ul class="list-group">
+            {% for post in posts %}
+            <li class="list-group-item">
+                <h5><a href="{{ url_for('view_post', post_id=post.id) }}">{{ post.title }}</a></h5>
+                <p>{{ post.content[:100] }}...</p>
+                <small>Posted by {{ post.user.name }} on {{ post.date.strftime('%Y-%m-%d') }}</small>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Footer Navbar -->
+    <div class="nav-bar">
+        <div class="nav-icon">🏠<br><a href="/">Home</a></div>
+        <div class="nav-icon">📊<br><a href="/goals">Goals</a></div>
+        <div class="nav-icon">💬<br><a href="/chat">Chat</a></div>
+        <div class="nav-icon">📚<br><a href="/forum">Forum</a></div>  <!-- Added Forum Button -->
+        <div class="nav-icon">👤<br>
+            {% if session['user'] %}
+                <a href="/profile">Profile</a> | <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Chatbot -->
+    <div class="chatbot" id="chatbot" onclick="window.location.href='/chat'">
+        <div class="chatbot-header">
+            <span>Hi, I'm Al, how can I help you today!</span>
+            <span class="chatbot-close" onclick="event.stopPropagation(); minimizeChatbot();">✖</span>
+        </div>
+    </div>
+    
+    <div class="chatbot-small" id="chatbot-small" onclick="maximizeChatbot()">
+        <i class="bi bi-chat-dots"></i>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const pageTitle = document.title;
+
+            if (!window.location.pathname.includes("chat")) {
+                setTimeout(() => {
+                    fetch('/generate_greeting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: pageTitle })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const chatbot = document.getElementById('chatbot');
+                        chatbot.querySelector('.chatbot-header span').innerText = data.greeting;
+                        chatbot.style.display = 'flex';
+                    })
+                    .catch(error => console.error("Error fetching greeting:", error));
+                }, 3000);
+            }
+        });
+
+        function minimizeChatbot() {
+            document.getElementById('chatbot').style.display = 'none';
+            document.getElementById('chatbot-small').style.display = 'block';
+        }
+
+        function maximizeChatbot() {
+            document.getElementById('chatbot').style.display = 'flex';
+            document.getElementById('chatbot-small').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

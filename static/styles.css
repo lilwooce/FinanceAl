@@ -1,0 +1,239 @@
+body {
+    background-color: white;
+    color: #2E1A47;
+    margin-bottom: 80px; /* ✅ Add space for navbar */
+}
+.header {
+    background: linear-gradient(135deg, #2E1A47, #4B2C63);
+    color: white;
+    padding: 30px;
+    text-align: center;
+    border-radius: 0 0 30px 30px;
+}
+.card {
+    border-radius: 20px;
+    margin: 10px 0;
+    background-color: white;
+    color: #2E1A47;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.app-header {
+    background: #2E1A47;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 36px;
+    font-weight: bold;
+    border-bottom: 3px solid #4B2C63;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Slight black shadow */
+    width: 100%; /* Full width */
+}
+.nav-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000; /* ✅ Ensure navbar stays on top */
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+.btn-sm {
+    padding: 5px 8px;
+    font-size: 14px;
+}
+
+.nav-icon {
+    text-align: center;
+    font-size: 14px;
+    color: #2E1A47;
+}
+.content-wrapper {
+    padding-bottom: 80px; /* ✅ Ensure content doesn't go under the navbar */
+}
+.icon {
+    font-size: 40px;
+    color: #2E1A47;
+}
+.chatbot {
+    position: fixed;
+    bottom: 70px; /* ✅ Move chatbot above navbar */
+    right: 20px;
+    background: #4B2C63;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1100; /* ✅ Ensure chatbot is above the navbar */
+}
+.chatbot-small {
+    display: none;
+    position: fixed;
+    bottom: 70px; /* ✅ Move minimized chatbot above navbar */
+    right: 20px;
+    background: #4B2C63;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    z-index: 1100;
+}
+.chatbot-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+.chatbot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.chatbot-close {
+    cursor: pointer;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text-dark);
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+.btn-primary {
+    background: var(--primary-color);
+    border: none;
+    transition: background-color var(--transition-speed), transform 0.2s;
+}
+.btn-primary:hover {
+    background: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.nav-icon {
+    text-align: center;
+    font-size: 14px;
+    color: white;
+    transition: transform 0.2s ease-in-out, color 0.2s;
+}
+.nav-icon:hover {
+    transform: translateY(-3px);
+    color: #FFD700; /* Light gold hover effect */
+}
+
+.nav a {
+    text-decoration: none;
+    color: inherit;
+    transition: color var(--transition-speed);
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+input:focus, select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(78, 52, 107, 0.3);
+    outline: none;
+}
+
+.chatbot:hover {
+    transform: scale(1.05);
+}
+.chatbot-small:hover {
+    transform: scale(1.1);
+}
+
+/* Header container styling */
+.header {
+text-align: center;
+margin-bottom: 20px;
+}
+
+/* Monthly Cash Flow */
+#net-cash-flow {
+font-size: 2.5rem;
+font-weight: bold;
+color: #00ff6a;
+margin-bottom: 10px;
+text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Slight black shadow */
+padding: 2px 4px; /* Adds space between the text and border */
+border-radius: 4px; /* Optional: Adds rounded corners to the border */
+}
+
+/* Monthly Cash Flow Label */
+.header p {
+    font-size: 1.2rem;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Slight black shadow */
+    padding: 2px 4px; /* Adds space between the text and border */
+    border-radius: 4px; /* Optional: Adds rounded corners to the border */
+}
+
+/* Flexbox layout for the income and expenses */
+.d-flex {
+display: flex;
+justify-content: center;
+gap: 30px; /* Adjust the space between income and expenses */
+font-size: 1.1rem;
+}
+
+.d-flex p {
+margin: 0;
+}
+
+/* Adjust for the numbers to look balanced */
+#monthly-income, #monthly-expenses {
+font-weight: bold;
+color: #00ff6a; /* Green for income */
+}
+
+#monthly-expenses {
+color: #ff0000; /* Red for expenses */
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+#net-cash-flow {
+    font-size: 2rem; /* Smaller font for mobile */
+}
+
+.d-flex {
+    flex-direction: column; /* Stack income and expenses vertically */
+    align-items: center;
+    gap: 15px;
+}
+
+.header p {
+    font-size: 1rem; /* Adjust font size for smaller screens */
+}
+}
