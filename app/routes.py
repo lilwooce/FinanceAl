@@ -1,7 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, session, request, jsonify
 from authlib.integrations.flask_client import OAuth
-from config import SessionLocal, AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_CALLBACK_URL, AUTH0_LOGOUT_REDIRECT, OPENAI_API_KEY
-from models import User, ChatHistory, Transaction, Budget, RecurringExpense, Goal, Post, Comment
+from .models import User, ChatHistory, Transaction, Budget, RecurringExpense, Goal, Post, Comment
 from openai import OpenAI
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -10,6 +9,17 @@ from flask import abort
 import re
 from sqlalchemy.orm import joinedload
 import logging
+from .config import Config
+
+# Access the values from the Config class
+SessionLocal = Config.SessionLocal
+AUTH0_DOMAIN = Config.AUTH0_DOMAIN
+AUTH0_CLIENT_ID = Config.AUTH0_CLIENT_ID
+AUTH0_CLIENT_SECRET = Config.AUTH0_CLIENT_SECRET
+AUTH0_CALLBACK_URL = Config.AUTH0_CALLBACK_URL
+AUTH0_LOGOUT_REDIRECT = Config.AUTH0_LOGOUT_REDIRECT
+OPENAI_API_KEY = Config.OPENAI_API_KEY
+
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -19,7 +29,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 logging.basicConfig(level=logging.DEBUG, format="%(message)s", handlers=[
 ])
 
-client = OpenAI(api_key=OPENAI_API_KEY, default_headers={"OpenAI-Beta": "assistants=v2"})
+client = OpenAI(api_key=Config.OPENAI_API_KEY, default_headers={"OpenAI-Beta": "assistants=v2"})
 
 # 🔹 Configure Auth0 OAuth
 oauth = OAuth(app)
@@ -34,18 +44,21 @@ auth0 = oauth.register(
     server_metadata_url=f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration",
 )
 
-# 🔹 Home Route
-@app.route("/")
-def index():
+from flask import Blueprint
+
+main = Blueprint('main', __name__)
+
+@main.route('/')
+def home():
     return render_template("index.html")
 
 # 🔹 Auth0 Login Route
-@app.route("/login")
+@main.route("/login")
 def login():
     return auth0.authorize_redirect(redirect_uri=AUTH0_CALLBACK_URL)
 
 # 🔹 Auth0 Callback (Handles User Authentication)
-@app.route("/callback")
+@main.route("/callback")
 def callback():
     auth0.authorize_access_token()
     user_info = auth0.get("userinfo").json()
@@ -69,7 +82,7 @@ def callback():
 
     db_session.close()
 
-    return redirect(url_for("profile"))
+    return redirect(url_for("main.profile"))
 
 def generate_budget_recommendations(user_id):
     db = SessionLocal()
@@ -129,18 +142,18 @@ def generate_budget_recommendations(user_id):
 
 
 # 🔹 Profile Page
-@app.route("/profile")
+@main.route("/profile")
 def profile():
     user_info = session.get("user")
     if not user_info:
-        return redirect(url_for("login"))
+        return redirect(url_for("main.login"))
     return render_template("profile.html", user=user_info)
 
-@app.route("/goals")
+@main.route("/goals")
 def goals():
     return render_template("goals.html")
 
-@app.route('/chat')
+@main.route('/chat')
 def chat():
     return render_template('chat.html')
 
@@ -160,7 +173,7 @@ def summarize_chat_history(user_id):
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "## Task\r\nYou are an AI assistant that summarizes a user\'s past conversations to provide context for the next interaction. \r\n\r\n## Input Data\r\n- A structured list of previous messages, including both user and AI responses.\r\n- The messages will be retrieved from a database and formatted as a list of structured entries.\r\n\r\n## Instructions\r\n1. **Identify key discussion points:** Extract the main topics, user preferences, and critical decisions.\r\n2. **Summarize user concerns and requests:** Clearly state what the user has been asking about.\r\n3. **Summarize AI responses:** Provide a concise breakdown of the advice, explanations, or solutions given.\r\n4. **Highlight unresolved questions:** If the conversation includes open-ended or unresolved inquiries, list them.\r\n5. **Remove redundant or irrelevant details:** The summary should be **clear, concise, and actionable**.\r\n6. **Output in a structured format:**\r\n\r\n## Format\r\n\\`\\`\\`\r\n### Previous Conversation Summary:\r\n- **Main topics discussed:** [List key topics]\r\n- **User preferences or concerns:** [Summarize user preferences, concerns, or requests]\r\n- **AI responses given:** [Summarize AI\'s guidance]\r\n- **Unresolved questions:** [List any unanswered questions]\r\n\\`\\`\\`\r\n\r\n### Example Output:\r\n\\`\\`\\`\r\n### Previous Conversation Summary:\r\n- **Main topics discussed:** Financial planning, stock investments, tax strategies.\r\n- **User preferences or concerns:** Interested in reducing tax liability while maximizing long-term investments.\r\n- **AI responses given:** Provided tax-saving strategies, investment diversification tips, and budgeting methods.\r\n- **Unresolved questions:** User asked about advanced stock trading algorithms, awaiting further details.\r\n\\`\\`\\`\r\n\r\nThis summary will be **used in the next prompt** to ensure continuity in the conversation.\r\n ENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT"},
+                {"role": "system", "content": "## Task\r\nYou are an AI assistant with the name Al and you are an Alpaca that summarizes a user\'s past conversations to provide context for the next interaction. \r\n\r\n## Input Data\r\n- A structured list of previous messages, including both user and AI responses.\r\n- The messages will be retrieved from a database and formatted as a list of structured entries.\r\n\r\n## Instructions\r\n1. **Identify key discussion points:** Extract the main topics, user preferences, and critical decisions.\r\n2. **Summarize user concerns and requests:** Clearly state what the user has been asking about.\r\n3. **Summarize AI responses:** Provide a concise breakdown of the advice, explanations, or solutions given.\r\n4. **Highlight unresolved questions:** If the conversation includes open-ended or unresolved inquiries, list them.\r\n5. **Remove redundant or irrelevant details:** The summary should be **clear, concise, and actionable**.\r\n6. **Output in a structured format:**\r\n\r\n## Format\r\n\\`\\`\\`\r\n### Previous Conversation Summary:\r\n- **Main topics discussed:** [List key topics]\r\n- **User preferences or concerns:** [Summarize user preferences, concerns, or requests]\r\n- **AI responses given:** [Summarize AI\'s guidance]\r\n- **Unresolved questions:** [List any unanswered questions]\r\n\\`\\`\\`\r\n\r\n### Example Output:\r\n\\`\\`\\`\r\n### Previous Conversation Summary:\r\n- **Main topics discussed:** Financial planning, stock investments, tax strategies.\r\n- **User preferences or concerns:** Interested in reducing tax liability while maximizing long-term investments.\r\n- **AI responses given:** Provided tax-saving strategies, investment diversification tips, and budgeting methods.\r\n- **Unresolved questions:** User asked about advanced stock trading algorithms, awaiting further details.\r\n\\`\\`\\`\r\n\r\nThis summary will be **used in the next prompt** to ensure continuity in the conversation.\r\n ENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT"},
                 {"role": "user", "content": f"User's name: {user_name}\nChat history:\n{conversation_text}"}
             ],
         )
@@ -196,7 +209,7 @@ def generate_greeting(user_id, name, page=""):
     goal_summary = summarize_goals(user_id)  # ✅ Include goal summary
     
     try:
-        prompt = "## Instructions  \r\n1. Using the user\'s **name**, **past chat history**, and **transactional history**, craft a **personalized greeting** that acknowledges their progress and aligns with their financial goals.  \r\n2. Incorporate relevant **financial goals**, **key activities**, and **recent changes** based on the provided details.  \r\n3. Ensure the greeting is **warm, humanlike, and motivational**, tailored to encourage continued financial growth.  \r\n4. Avoid generic or repetitive phrasing—each greeting should feel unique and specific to the user.  \r\n5. Keep the message **concise** but **engaging**, with a focus on the user’s achievements and next steps.  \r\n\r\n## Output Format  \r\nGenerate the greeting message based on the provided details.  \r\n\r\n---\r\n\r\n## **Example Output**  \r\n\r\n\\`\\`\\`\r\nWelcome back, [User\'s Name]! 👋 You’ve made fantastic progress with optimizing your budget, and your focus on reducing miscellaneous expenses is clearly paying off. Staying on track with your financial goals will only lead to more success. Let’s keep pushing forward and continue building your financial future together. 🚀\r\n\\`\\`\\`\r\n\r\n---\r\n\r\nOnly include the text. Include no special characters (other than emojis). Keep your responses incredibly short and concise. No yapping. Max 15 words"
+        prompt = "## You have the name Al and you are an Alpaca! Instructions  \r\n1. Using the user\'s **name**, **past chat history**, and **transactional history**, craft a **personalized greeting** that acknowledges their progress and aligns with their financial goals.  \r\n2. Incorporate relevant **financial goals**, **key activities**, and **recent changes** based on the provided details.  \r\n3. Ensure the greeting is **warm, humanlike, and motivational**, tailored to encourage continued financial growth.  \r\n4. Avoid generic or repetitive phrasing—each greeting should feel unique and specific to the user.  \r\n5. Keep the message **concise** but **engaging**, with a focus on the user’s achievements and next steps.  \r\n\r\n## Output Format  \r\nGenerate the greeting message based on the provided details.  \r\n\r\n---\r\n\r\n## **Example Output**  \r\n\r\n\\`\\`\\`\r\nWelcome back, [User\'s Name]! 👋 You’ve made fantastic progress with optimizing your budget, and your focus on reducing miscellaneous expenses is clearly paying off. Staying on track with your financial goals will only lead to more success. Let’s keep pushing forward and continue building your financial future together. 🚀\r\n\\`\\`\\`\r\n\r\n---\r\n\r\nOnly include the text. Include no special characters (other than emojis). Keep your responses incredibly short and concise. No yapping. Max 15 words"
         prompt += f"\nUser's name: {name}\n"
         if ("index" not in page) and page !="":
             prompt += f"User is on the {page} page so think about that while greeting.\n"
@@ -217,7 +230,7 @@ def generate_greeting(user_id, name, page=""):
         print(f"Error generating personalized greeting: {e}")
         return "Hello! I'm here to assist you with financial questions. How can I help today?"
     
-@app.route("/generate_greeting", methods=["POST"])
+@main.route("/generate_greeting", methods=["POST"])
 def fetch_greeting():
     user_info = session.get("user")
     data = request.get_json()  # ✅ Get JSON data from request
@@ -265,7 +278,7 @@ def summarize_past_transactions(user_id):
     return summary
 
 
-@app.route("/send_message", methods=["POST"])
+@main.route("/send_message", methods=["POST"])
 def send_message():
     user_message = request.json.get("message", "").strip()
     user_info = session.get("user")
@@ -301,7 +314,7 @@ def send_message():
                             f"Suggest ways to reduce spending and save more.")
 
     try:
-        prompt = "## Task\r\nYou are a highly intelligent and financially savvy AI assistant with expertise in **investments, savings, budgeting, tax strategies, risk management, and financial growth**. Your goal is to provide **precise, data-driven, and strategic advice** tailored to the user’s financial goals.\r\n\r\n## Context\r\n- You must adapt your responses based on the user’s financial profile, risk tolerance, and preferences.\r\n- Use **real-world financial principles** and up-to-date strategies to guide the user.\r\n- You must **explain concepts in simple terms** while providing **professional-level advice**.\r\n\r\n## Instructions\r\n1. **Gather user profile details:** Before giving advice, ask for key details such as income range, risk tolerance, financial goals (short-term and long-term), and investment knowledge.\r\n2. **Provide expert financial insights:** Offer clear, **data-backed strategies** for wealth building.\r\n3. **Adapt to different financial needs:**\r\n   - If the user is a beginner, simplify explanations and suggest safer investment options.\r\n   - If the user is experienced, provide **advanced insights** into investment strategies.\r\n4. **Balance risk and reward:** Guide the user towards **smart, calculated risks** for higher returns.\r\n5. **Include tax-efficient strategies:** Suggest ways to **minimize taxes** legally while maximizing financial growth.\r\n6. **Help with debt management and budgeting:** Offer strategies to reduce debt and optimize savings.\r\n\r\n## Output Format\r\n\\`\\`\\`\r\n### Personalized Financial Strategy:\r\n- **Current financial standing:** [If available, summarize user’s financial profile]\r\n- **Goals identified:** [Summarize user’s financial objectives]\r\n- **Recommended actions:** [Provide a clear step-by-step plan]\r\n- **Potential risks and considerations:** [Outline any risk factors]\r\n\\`\\`\\`\r\n\r\n## Example Interaction:\r\nUser: \"I have $10,000 to invest. What should I do?\"\r\nAI Response:\r\n\\`\\`\\`\r\n### Personalized Financial Strategy:\r\n- **Current financial standing:** Beginner investor with $10,000 to allocate.\r\n- **Goals identified:** Seeking growth with moderate risk tolerance.\r\n- **Recommended actions:**\r\n  1. **Allocate 50%** to diversified index funds (S&P 500, NASDAQ ETFs).\r\n  2. **Invest 20%** in high-dividend stocks for passive income.\r\n  3. **Keep 20%** in high-yield savings for liquidity.\r\n  4. **Use 10%** for learning (books, courses, financial mentorship).\r\n- **Potential risks and considerations:** Market volatility may impact stock investments; maintain a long-term view.\r\n\\`\\`\\`\r\n\r\n---\r\n\r\n ENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT. KEEP THE OUTPUT PURE TEXT (NO HASHTAS NO STARS JUST TEXT)"
+        prompt = "##You have the name Al and you are an Alpaca! Task\r\nYou are a highly intelligent and financially savvy AI assistant with expertise in **investments, savings, budgeting, tax strategies, risk management, and financial growth**. Your goal is to provide **precise, data-driven, and strategic advice** tailored to the user’s financial goals.\r\n\r\n## Context\r\n- You must adapt your responses based on the user’s financial profile, risk tolerance, and preferences.\r\n- Use **real-world financial principles** and up-to-date strategies to guide the user.\r\n- You must **explain concepts in simple terms** while providing **professional-level advice**.\r\n\r\n## Instructions\r\n1. **Gather user profile details:** Before giving advice, ask for key details such as income range, risk tolerance, financial goals (short-term and long-term), and investment knowledge.\r\n2. **Provide expert financial insights:** Offer clear, **data-backed strategies** for wealth building.\r\n3. **Adapt to different financial needs:**\r\n   - If the user is a beginner, simplify explanations and suggest safer investment options.\r\n   - If the user is experienced, provide **advanced insights** into investment strategies.\r\n4. **Balance risk and reward:** Guide the user towards **smart, calculated risks** for higher returns.\r\n5. **Include tax-efficient strategies:** Suggest ways to **minimize taxes** legally while maximizing financial growth.\r\n6. **Help with debt management and budgeting:** Offer strategies to reduce debt and optimize savings.\r\n\r\n## Output Format\r\n\\`\\`\\`\r\n### Personalized Financial Strategy:\r\n- **Current financial standing:** [If available, summarize user’s financial profile]\r\n- **Goals identified:** [Summarize user’s financial objectives]\r\n- **Recommended actions:** [Provide a clear step-by-step plan]\r\n- **Potential risks and considerations:** [Outline any risk factors]\r\n\\`\\`\\`\r\n\r\n## Example Interaction:\r\nUser: \"I have $10,000 to invest. What should I do?\"\r\nAI Response:\r\n\\`\\`\\`\r\n### Personalized Financial Strategy:\r\n- **Current financial standing:** Beginner investor with $10,000 to allocate.\r\n- **Goals identified:** Seeking growth with moderate risk tolerance.\r\n- **Recommended actions:**\r\n  1. **Allocate 50%** to diversified index funds (S&P 500, NASDAQ ETFs).\r\n  2. **Invest 20%** in high-dividend stocks for passive income.\r\n  3. **Keep 20%** in high-yield savings for liquidity.\r\n  4. **Use 10%** for learning (books, courses, financial mentorship).\r\n- **Potential risks and considerations:** Market volatility may impact stock investments; maintain a long-term view.\r\n\\`\\`\\`\r\n\r\n---\r\n\r\n ENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT. KEEP THE OUTPUT PURE TEXT (NO HASHTAS NO STARS JUST TEXT)"
         prompt += spending_warning
         if request.json.get("beginner"):
             prompt += "\n\n## Explain everything in simple terms as if teaching a beginner."
@@ -347,7 +360,7 @@ def send_message():
 
     return jsonify({"response": bot_reply, "quick_replies": quick_replies})
 
-@app.route("/get_chat_history", methods=["GET"])
+@main.route("/get_chat_history", methods=["GET"])
 def get_chat_history():
     user_info = session.get("user")
 
@@ -376,7 +389,7 @@ def init_chat_session():
     session.modified = True
 
 # 🔹 Logout Route
-@app.route("/logout")
+@main.route("/logout")
 def logout():
     session.clear()
     return redirect(
@@ -396,7 +409,7 @@ def categorize_transaction(description):
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "## Task  \r\nYou are a finance assistant that classifies financial transactions into one of the following categories:  \r\n\r\n[\"Food\", \"Rent\", \"Utilities\", \"Savings\", \"Entertainment\", \"Misc\", \"Transportation\", \"Income\"]  \r\n\r\n## Instructions  \r\n1. **Analyze the transaction description** and assign it to the most appropriate category.  \r\n2. **Use logical classification rules** based on common spending patterns.  \r\n3. **If the category is unclear**, classify it as **\"Misc\"**.  \r\n4. **Output ONLY the category name**—no explanations, no additional text.  \r\n\r\n## Output Format  \r\nReturn ONLY one of the following words:  \r\n**Food, Rent, Utilities, Savings, Entertainment, Misc**  \r\n\r\n---\r\n\r\n## **Example Inputs & Outputs**  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Starbucks coffee - $5.50\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nFood\r\n\\`\\`\\`  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Netflix subscription - $15.99\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nEntertainment\r\n\\`\\`\\`  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Bank transfer - $200\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nMisc\r\n\\`\\`\\`  \r\n\r\n---\r\n\r\nENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT"},
+                {"role": "system", "content": "## Task  \r\nYou are a finance assistant with the name Al and you are an Alpaca!that classifies financial transactions into one of the following categories:  \r\n\r\n[\"Food\", \"Rent\", \"Utilities\", \"Savings\", \"Entertainment\", \"Misc\", \"Transportation\", \"Income\"]  \r\n\r\n## Instructions  \r\n1. **Analyze the transaction description** and assign it to the most appropriate category.  \r\n2. **Use logical classification rules** based on common spending patterns.  \r\n3. **If the category is unclear**, classify it as **\"Misc\"**.  \r\n4. **Output ONLY the category name**—no explanations, no additional text.  \r\n\r\n## Output Format  \r\nReturn ONLY one of the following words:  \r\n**Food, Rent, Utilities, Savings, Entertainment, Misc**  \r\n\r\n---\r\n\r\n## **Example Inputs & Outputs**  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Starbucks coffee - $5.50\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nFood\r\n\\`\\`\\`  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Netflix subscription - $15.99\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nEntertainment\r\n\\`\\`\\`  \r\n\r\n**User Input:**  \r\n\\`\\`\\`\r\n\"Bank transfer - $200\"\r\n\\`\\`\\`  \r\n**AI Response:**  \r\n\\`\\`\\`\r\nMisc\r\n\\`\\`\\`  \r\n\r\n---\r\n\r\nENSURE THAT YOU DON'T USE MARKUP IN THE OUTPUT"},
                 {"role": "user", "content": f"Classify this transaction: '{description}'"}
             ],
         )
@@ -410,7 +423,7 @@ def categorize_transaction(description):
         print(f"AI Categorization Error: {e}")
         return "Misc"  # Fallback category in case of an error
 
-@app.route("/add_transaction", methods=["POST"])
+@main.route("/add_transaction", methods=["POST"])
 def add_transaction():
     user_info = session.get("user")
 
@@ -463,7 +476,7 @@ def add_transaction():
     return jsonify({"status": "success", "message": f"Transaction added under '{category}'."})
 
 
-@app.route("/get_transactions", methods=["GET"])
+@main.route("/get_transactions", methods=["GET"])
 def get_transactions():
     user_info = session.get("user")
 
@@ -488,7 +501,7 @@ def get_transactions():
         "date": t.date.strftime("%Y-%m-%d %H:%M:%S")
     } for t in transactions])
 
-@app.route("/set_budget", methods=["POST"])
+@main.route("/set_budget", methods=["POST"])
 def set_budget():
     user_info = session.get("user")
 
@@ -519,7 +532,7 @@ def set_budget():
 
     return jsonify({"status": "success", "message": "Budget set successfully."})
 
-@app.route("/get_budgets", methods=["GET"])
+@main.route("/get_budgets", methods=["GET"])
 def get_budgets():
     user_info = session.get("user")
 
@@ -540,7 +553,7 @@ def get_budgets():
         "limit_amount": b.limit_amount
     } for b in budgets])
 
-@app.route("/set_income", methods=["POST"])
+@main.route("/set_income", methods=["POST"])
 def set_income():
     user_info = session.get("user")
 
@@ -584,12 +597,12 @@ def set_income():
     })
 
 
-@app.route("/get_financial_advice", methods=["GET"])
+@main.route("/get_financial_advice", methods=["GET"])
 def get_financial_advice():
     advice = session.get("financial_advice", "No financial advice available.")
     return jsonify({"advice": advice})
 
-@app.route("/get_financial_summary", methods=["GET"])
+@main.route("/get_financial_summary", methods=["GET"])
 def get_financial_summary():
     user_info = session.get("user")
 
@@ -618,7 +631,7 @@ def get_financial_summary():
 
     return jsonify({"income": total_income, "expenses": total_expenses})
 
-@app.route("/delete_transaction", methods=["POST"])
+@main.route("/delete_transaction", methods=["POST"])
 def delete_transaction():
     user_info = session.get("user")
 
@@ -647,7 +660,7 @@ def delete_transaction():
 
     return jsonify({"status": "success", "message": "Transaction deleted successfully."})
 
-@app.route("/edit_transaction", methods=["POST"])
+@main.route("/edit_transaction", methods=["POST"])
 def edit_transaction():
     user_info = session.get("user")
 
@@ -675,7 +688,7 @@ def edit_transaction():
 
     return jsonify({"status": "success", "message": "Transaction updated successfully."})
 
-@app.route("/get_income", methods=["GET"])
+@main.route("/get_income", methods=["GET"])
 def get_income():
     user_info = session.get("user")
 
@@ -691,7 +704,7 @@ def get_income():
 
     return jsonify({"income": user.monthly_income})
 
-@app.route("/add_recurring_expense", methods=["POST"])
+@main.route("/add_recurring_expense", methods=["POST"])
 def add_recurring_expense():
     user_info = session.get("user")
 
@@ -729,7 +742,7 @@ def add_recurring_expense():
 
     return jsonify({"status": "success", "message": "Recurring expense added successfully."})
 
-@app.route("/get_recurring_expenses", methods=["GET"])
+@main.route("/get_recurring_expenses", methods=["GET"])
 def get_recurring_expenses():
     user_info = session.get("user")
 
@@ -783,7 +796,7 @@ def process_recurring_expenses():
     db.commit()
     db.close()
 
-@app.route("/get_spend_analysis", methods=["GET"])
+@main.route("/get_spend_analysis", methods=["GET"])
 def get_spend_analysis():
     user_info = session.get("user")
 
@@ -829,7 +842,7 @@ def get_financial_summary(user_id):
     
     return total_income, total_expenses
 
-@app.route("/add_goal", methods=["POST"])
+@main.route("/add_goal", methods=["POST"])
 def add_goal():
     user_info = session.get("user")
     if not user_info:
@@ -864,7 +877,7 @@ def add_goal():
     return jsonify({"message": "Goal added successfully!"})
 
 
-@app.route("/get_goals", methods=["GET"])
+@main.route("/get_goals", methods=["GET"])
 def get_goals():
     user_info = session.get("user")
     logging.debug("Fetching goals for user")  # ✅ Debugging log
@@ -885,7 +898,7 @@ def get_goals():
     ])
     
 
-@app.route("/edit_goal", methods=["POST"])
+@main.route("/edit_goal", methods=["POST"])
 def edit_goal():
     user_info = session.get("user")
     if not user_info:
@@ -903,7 +916,7 @@ def edit_goal():
     return jsonify({"message": "Goal updated successfully!"})
 
 
-@app.route("/delete_goal", methods=["POST"])
+@main.route("/delete_goal", methods=["POST"])
 def delete_goal():
     user_info = session.get("user")
     if not user_info:
@@ -935,7 +948,7 @@ def find_matching_goal(user_id, transaction_description):
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an AI assistant that finds a matching goal based on a transaction description."},
+                {"role": "system", "content": "You have the name Al and you are an Alpaca! You are an AI assistant that finds a matching goal based on a transaction description."},
                 {"role": "user", "content": f"Transaction description: {transaction_description}\n\nUser's goals: {goal_names}\n\nFind the closest matching goal."}
             ],
         )
@@ -956,7 +969,7 @@ def find_matching_goal(user_id, transaction_description):
     return None  # No match found
 
 # 🔹 Forum Page (View Posts)
-@app.route('/forum')
+@main.route('/forum')
 def forum():
     db = SessionLocal()  # Get the database session
     # Eager load the 'user' relationship with posts using joinedload
@@ -968,11 +981,11 @@ def forum():
 # 🔹 Function to Protect Routes That Need Authentication
 def require_login():
     if "user" not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("main.login"))
     return session["user"]
 
 # 🔹 Route to Create a New Post
-@app.route('/forum/new', methods=['GET', 'POST'])
+@main.route('/forum/new', methods=['GET', 'POST'])
 def new_post():
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()
@@ -986,10 +999,10 @@ def new_post():
         db.add(post)  # Add the new post to the database
         db.commit()  # Commit the changes
         db.close()
-        return redirect(url_for('forum'))  # Redirect back to the forum
+        return redirect(url_for('main.forum'))  # Redirect back to the forum
     return render_template('new_post.html')  # Render the new post creation form
 
-@app.route('/forum/post/<int:post_id>', methods=['GET', 'POST'])
+@main.route('/forum/post/<int:post_id>', methods=['GET', 'POST'])
 def view_post(post_id):
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()  # Get the database session
@@ -1021,7 +1034,7 @@ def view_post(post_id):
     return render_template('view_post.html', post=post, comments=comments)
 
 # 🔹 Route to Delete a Post (Only Author)
-@app.route('/forum/post/delete/<int:post_id>', methods=['POST'])
+@main.route('/forum/post/delete/<int:post_id>', methods=['POST'])
 def delete_post(post_id):
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()  # Get the database session
@@ -1039,11 +1052,11 @@ def delete_post(post_id):
     db.delete(post)  # Delete the post from the database
     db.commit()  # Commit the changes
     db.close()
-    return redirect(url_for('forum'))  # Redirect back to the forum
+    return redirect(url_for('main.forum'))  # Redirect back to the forum
 
 
 # 🔹 Route to Edit a Comment
-@app.route('/forum/comment/edit/<int:comment_id>', methods=['GET', 'POST'])
+@main.route('/forum/comment/edit/<int:comment_id>', methods=['GET', 'POST'])
 def edit_comment(comment_id):
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()  # Get the database session
@@ -1074,7 +1087,7 @@ def edit_comment(comment_id):
 
 
 
-@app.route('/forum/post/edit/<int:post_id>', methods=['GET', 'POST'])
+@main.route('/forum/post/edit/<int:post_id>', methods=['GET', 'POST'])
 def edit_post(post_id):
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()  # Get the database session
@@ -1108,7 +1121,7 @@ def edit_post(post_id):
     return render_template('edit_post.html', post=post)  # Return the edit post form
 
 # 🔹 Route to Delete a Comment (Only Author)
-@app.route('/forum/comment/delete/<int:comment_id>', methods=['POST'])
+@main.route('/forum/comment/delete/<int:comment_id>', methods=['POST'])
 def delete_comment(comment_id):
     user_info = require_login()  # Ensure user is logged in
     db = SessionLocal()  # Get the database session
@@ -1126,5 +1139,5 @@ def delete_comment(comment_id):
     db.delete(comment)  # Delete the comment from the database
     db.commit()  # Commit the changes
     db.close()
-    return redirect(url_for('view_post', post_id=comment.post_id))  # Redirect back to the post page
+    return redirect(url_for('main.view_post', post_id=comment.post_id))  # Redirect back to the post page
 

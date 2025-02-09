@@ -1,7 +1,10 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Float, Enum, Boolean
 from sqlalchemy.orm import relationship
-from config import Base, engine
 from datetime import datetime
+from .config import Config
+
+Base = Config.Base
+engine = Config.engine
 
 class User(Base):
     __tablename__ = "users"

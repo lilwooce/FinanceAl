@@ -88,8 +88,49 @@
         </div>
     </div>
     
+    <!-- Chatbot -->
+    <div class="chatbot" id="chatbot" onclick="window.location.href='/chat'">
+        <div class="chatbot-header">
+            <span>Hi, I'm Al, how can I help you today!</span>
+            <span class="chatbot-close" onclick="event.stopPropagation(); minimizeChatbot();">✖</span>
+        </div>
+    </div>
+    
+    <div class="chatbot-small" id="chatbot-small" onclick="maximizeChatbot()">
+        <i class="bi bi-chat-dots"></i>
+    </div>
 
     <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const pageTitle = document.title;
+
+            if (!window.location.pathname.includes("chat")) {
+                setTimeout(() => {
+                    fetch('/generate_greeting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: pageTitle })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const chatbot = document.getElementById('chatbot');
+                        chatbot.querySelector('.chatbot-header span').innerText = data.greeting;
+                        chatbot.style.display = 'flex';
+                    })
+                    .catch(error => console.error("Error fetching greeting:", error));
+                }, 3000);
+            }
+        });
+
+        function minimizeChatbot() {
+            document.getElementById('chatbot').style.display = 'none';
+            document.getElementById('chatbot-small').style.display = 'block';
+        }
+
+        function maximizeChatbot() {
+            document.getElementById('chatbot').style.display = 'flex';
+            document.getElementById('chatbot-small').style.display = 'none';
+        }
         function addGoal() {
             const goalName = document.getElementById("goal-name").value.trim();
             const goalAmount = document.getElementById("goal-amount").value.trim();

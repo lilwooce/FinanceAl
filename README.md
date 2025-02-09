@@ -32,7 +32,7 @@ Installation
 
 Clone the repository:
 
-git clone https://github.com/yourusername/financeal.git
+git clone https://github.com/lilwooce/financeal.git
 
 Navigate to the project directory:
 
@@ -94,9 +94,9 @@ Contact
 
 Developer: Jean-Guy Leconte
 
-Email: your.email@example.com
+Email: jeanguy.leconte.iv@gmail.com
 
-GitHub: yourusername
+GitHub: lilwooce
 
 Acknowledgments
 

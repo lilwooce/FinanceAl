@@ -12,7 +12,7 @@
 </head>
 <body>
     <header class="app-header">
-        <h1>FinanceAL</h1>
+        <h1>FinanceAl</h1>
     </header>
 
     <div class="content-wrapper">
@@ -153,11 +153,15 @@
         }
 
         function addTransaction() {
-            const userCategoryInput = document.getElementById('category').value.trim(); // ✅ User input is description
-            const amount = document.getElementById('amount').value.trim();
-            const type = document.getElementById('type').value.trim();
+            const userCategoryInput = document.getElementById('category');
+            const amountInput = document.getElementById('amount');
+            const typeInput = document.getElementById('type');
 
-            if (!userCategoryInput || !amount) {
+            const userCategory = userCategoryInput.value.trim();
+            const amount = amountInput.value.trim();
+            const type = typeInput.value.trim();
+
+            if (!userCategory || !amount) {
                 alert("Please fill in all fields.");
                 return;
             }
@@ -174,7 +178,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    description: userCategoryInput,  // ✅ Save user input as description
+                    description: userCategory,  // ✅ Save user input as description
                     amount,
                     type
                 })
@@ -185,12 +189,18 @@
                 loadTransactions(); // ✅ Refresh transactions
             })
             .finally(() => {
+                // ✅ Clear input fields after submission
+                userCategoryInput.value = "";
+                amountInput.value = "";
+                typeInput.value = "";
+
                 btn.disabled = false;
                 loadFinancialSummary();
                 text.classList.remove("d-none");
                 spinner.classList.add("d-none");
             });
         }
+
 
         function loadTransactions() {
             fetch('/get_transactions')
@@ -204,14 +214,15 @@
                     return;
                 }
 
-                data.forEach(transaction => {
+                // Reverse data to show newest transactions first
+                data.reverse().forEach(transaction => {
                     const transactionElement = document.createElement("div");
                     transactionElement.classList.add("transaction-item", "p-2", "border", "rounded", "mb-2", "d-flex", "justify-content-between", "align-items-center");
 
                     transactionElement.innerHTML = `
                         <div>
                             <b>Category:</b> ${transaction.category} <br>
-                            <small class="text-muted"><b>Description:</b> ${transaction.description}</small> <!-- ✅ Show user's original input -->
+                            <small class="text-muted"><b>Description:</b> ${transaction.description}</small>
                             <br>
                             <span class="${transaction.type === 'income' ? 'text-success' : 'text-danger'}">
                                 ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}
@@ -231,6 +242,7 @@
                 });
             });
         }
+
 
         function editTransaction(id, category, amount, description) {
             document.getElementById("edit-transaction-id").value = id;
