@@ -26,9 +26,6 @@ app.secret_key = "your_secret_key"
 app.config["SESSION_PERMANENT"] = False  # Ensures session resets when browser is closed
 app.config["SESSION_TYPE"] = "filesystem"
 
-logging.basicConfig(level=logging.DEBUG, format="%(message)s", handlers=[
-])
-
 client = OpenAI(api_key=Config.OPENAI_API_KEY, default_headers={"OpenAI-Beta": "assistants=v2"})
 
 # 🔹 Configure Auth0 OAuth
@@ -459,14 +456,12 @@ def add_transaction():
     if transaction_type == "expense":
         matched_goal = find_matching_goal(user.id, description)
         if matched_goal:
-            logging.debug(f"Updating goal progress for {matched_goal.name} with amount {amount}")
             matched_goal.progress += amount
 
             # ✅ Check if goal is completed
             if matched_goal.progress >= matched_goal.target:
                 matched_goal.progress = matched_goal.target  # Ensure progress does not exceed target
                 matched_goal.completed = True
-                logging.debug(f"Goal '{matched_goal.name}' completed!")
 
             db.add(matched_goal)  # ✅ Ensure goal updates are committed
 
@@ -880,12 +875,10 @@ def add_goal():
 @main.route("/get_goals", methods=["GET"])
 def get_goals():
     user_info = session.get("user")
-    logging.debug("Fetching goals for user")  # ✅ Debugging log
     db = SessionLocal()
     user = db.query(User).filter_by(auth0_id=user_info['sub']).first()
     goals = db.query(Goal).filter_by(user_id=user.id).all()
     db.close()
-    logging.debug(goals)
     return jsonify([
         {
             "id": g.id,
@@ -956,14 +949,11 @@ def find_matching_goal(user_id, transaction_description):
         matched_goal_name = response.choices[0].message.content.strip()
         
         for goal in goals:
-            logging.debug(f"Checking goal: {goal.name} against AI match: {matched_goal_name}")  # ✅ Debugging log
             if goal.name.lower() in matched_goal_name.lower():
-                logging.debug(f"Matched goal found: {goal.name}")  # ✅ Debugging log
                 db.close()
                 return goal
-
     except Exception as e:
-        logging.error(f"AI Goal Matching Error: {e}")  # ✅ Use logging for better debugging
+        print(f"AI Matching Error: {e}")
     
     db.close()
     return None  # No match found
