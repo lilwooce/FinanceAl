@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Flask-WTF
+Flask-CORS
+requests
+openai
+dotenv
+psycopg2-binary
+bootstrap-flask
+

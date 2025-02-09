@@ -4,96 +4,267 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat with AL</title>
+    <link rel="icon" href="../static/images/FinanceAl.png" type="image/png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: white;
+            background-color: #f7f7f7;
             color: #2E1A47;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            font-family: 'Poppins', sans-serif;
         }
-        .quick-reply-btn {
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 5px;
-            background-color: #4B2C63;
+        /* Ensure user and bot messages have consistent positioning */
+        .bot-message-container .profile-pic {
+            margin-right: 10px;
+        }
+
+        .user-message-container .profile-pic {
+            margin-left: 10px;
+        }
+        /* Bot message (left) */
+        .bot-message {
+            background: #4B2C63;
             color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
+        }
+        /* Ensures proper layout for messages */
+        .chat-message-container {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 10px;
+            max-width: 75%;
+        }
+
+        /* Container for AL's messages (left-aligned) */
+        .bot-message-container {
+            justify-content: flex-start;
+        }
+
+        /* Container for user messages (right-aligned) */
+        .user-message-container {
+            justify-content: flex-end;
+        }
+        /* User message (right) */
+        .user-message {
+            background: #E0D4ED;
+            color: #2E1A47;
+            text-align: right;
         }
         .chat-header {
             background: #2E1A47;
             color: white;
-            padding: 15px;
+            padding: 15px 20px;
             text-align: center;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             position: fixed;
             top: 0;
             width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
+
         .chat-container {
             flex-grow: 1;
-            margin-top: 60px;
+            margin-top: 80px;
             padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            max-height: calc(100vh - 140px); /* Ensures messages fit above input */
+            max-height: calc(100vh - 160px);
         }
 
         .chat-message {
             max-width: 75%;
-            padding: 10px;
-            margin: 5px 10px;
-            border-radius: 10px;
+            padding: 12px;
+            margin: 10px;
+            border-radius: 15px;
             word-wrap: break-word;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
         }
+
         .bot-message {
             background: #4B2C63;
             color: white;
             align-self: flex-start;
+            flex-direction: row;
         }
+
+        .bot-message img {
+            margin-right: 10px;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;  /* Moves it to the very left */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 22px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out; /* Animation */
+        }
+
+        .back-btn:hover {
+            transform: translateY(-50%) scale(1.2);  /* Slightly enlarges the button */
+            opacity: 0.8;  /* Slight fade effect */
+        }
+
+        /* Ensures messages and profile images are aligned properly */
+        .chat-message-container {
+            display: flex;
+            align-items: center; /* Fixes profile pic alignment */
+            margin-bottom: 10px;
+            max-width: 75%;
+        }
+
+        /* Align bot messages to the left */
+        .bot-message-container {
+            justify-content: flex-start;
+        }
+
+        /* Align user messages to the right */
+        .user-message-container {
+            justify-content: flex-end;
+            display: flex;
+            flex-direction: row; /* Ensure text appears left of image */
+            align-items: center;
+            margin-left: auto; /* Push everything to the right */
+        }
+
+        /* Profile images */
+        .profile-pic {
+            width: 45px; /* Adjusted for better proportions */
+            height: 45px;
+            border-radius: 50%;
+            margin-left: 10px; /* Ensures image stays on the far right */
+        }
+
+        /* Bot messages */
+        .bot-message {
+            background: #4B2C63;
+            color: white;
+            text-align: left;
+            border-radius: 15px;
+            padding: 12px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+
+        /* User messages (text should be on the left of the image) */
         .user-message {
             background: #E0D4ED;
             color: #2E1A47;
-            align-self: flex-end;
+            text-align: left; /* Keep text aligned naturally */
+            border-radius: 15px;
+            padding: 12px;
+            max-width: 50%; /* Prevent stretching */
+            word-wrap: break-word;
         }
+
+
+        .user-message img {
+            margin-left: 10px;
+        }
+
+        .chat-message img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+
+        /* Profile images */
+        .profile-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 10 10px;
+        }
+
         .chat-input-container {
             position: fixed;
             bottom: 0;
             width: 100%;
             display: flex;
-            padding: 10px;
+            padding: 15px;
             background: white;
             border-top: 1px solid #ddd;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
+
+        .input-wrapper {
+            width: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         .chat-input {
             flex-grow: 1;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 25px;
             outline: none;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .send-btn {
             background: #2E1A47;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 20px;
             margin-left: 10px;
-            border-radius: 5px;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .back-btn {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            cursor: pointer;
+
+        .send-btn:hover {
+            background: #4B2C63;
+            transform: scale(1.05);
+        }
+        /* For mobile responsiveness */
+        @media (max-width: 768px) {
+            .chat-input {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .send-btn {
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            .input-wrapper {
+                width: 90%;
+            }
+        }
+
+        /* For mobile responsiveness */
+        @media (max-width: 768px) {
+            .chat-header {
+                font-size: 20px;
+                padding: 10px;
+            }
+
+            .send-btn {
+                font-size: 14px;
+            }
+
+            .chat-input {
+                font-size: 14px;
+            }
+
+            .quick-reply-btn {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -108,131 +279,161 @@
     <div id="quick-replies" class="text-center mt-2"></div>
 
     <div class="chat-input-container">
-        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
-        <button class="send-btn" onclick="sendMessage()">Send</button>
+        <div class="input-wrapper" style="width: 80%; margin: 0 auto; display: flex; align-items: center;">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
     </div>
+
     <script>
+        var userProfilePic = "{{ session['user']['picture'] if 'user' in session else '../static/images/default_pfp.png' }}";
+
         function goBack() {
             window.location.href = '/';
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-        fetchChatHistory();
-    });
-
-    function fetchChatHistory() {
-        fetch('/get_chat_history')
-        .then(response => response.json())
-        .then(data => {
-            const chatContainer = document.getElementById('chat-container');
-            chatContainer.innerHTML = "";  // Clear old messages
-
-            data.chat_history.forEach(msg => {
-                appendMessage(msg.sender, msg.text);
-            });
-
-            scrollToBottom();  // Ensure the last message is visible
+            fetchChatHistory();
         });
-    }
-    
-    function startDotAnimation() {
-        const dotsElement = document.getElementById("dots");
-        let dots = "";
-        return setInterval(() => {
-            dots = dots.length < 3 ? dots + "." : "";
-            dotsElement.textContent = dots;
-        }, 500); // ✅ Updates every 0.5 seconds
-    }
 
-    function sendMessage(message = null) {
-        const inputField = document.getElementById('chat-input');
-        const quickRepliesContainer = document.getElementById("quick-replies");
-        const chatContainer = document.getElementById('chat-container');
+        function fetchChatHistory() {
+            fetch('/get_chat_history')
+                .then(response => response.json())
+                .then(data => {
+                    const chatContainer = document.getElementById('chat-container');
+                    chatContainer.innerHTML = "";  // Clear old messages
 
-        let userMessage = message || inputField.value.trim();
-        if (userMessage === "") return;
+                    data.chat_history.forEach(msg => {
+                        appendMessage(msg.sender, msg.text);
+                    });
 
-        appendMessage("user", userMessage);
-        inputField.value = ""; // Clear input field
-
-        // ✅ Append a temporary "thinking" message
-        let tempMessage = appendMessage("bot", "AL is thinking");
-
-        // ✅ Start animation (dots appear one by one)
-        let dotCount = 0;
-        const typingAnimation = setInterval(() => {
-            dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
-            tempMessage.textContent = "AL is thinking" + ".".repeat(dotCount);
-        }, 500);
-
-        // ✅ Send request to Flask server
-        fetch('/send_message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMessage})
-        })
-        .then(response => response.json())
-        .then(data => {
-            clearInterval(typingAnimation); // ✅ Stop animation
-            tempMessage.textContent = data.response;
-
-            // ✅ Ensure quickRepliesContainer exists before modifying it
-            if (quickRepliesContainer) {
-                if (data.quick_replies && data.quick_replies.length > 0) {
-                    console.log(data.quick_replies)
-                    showQuickReplies(data.quick_replies);
-                } else {
-                    quickRepliesContainer.innerHTML = ""; // Clear if no quick replies
-                }
-            }
-        })
-        .catch(error => {
-            clearInterval(typingAnimation); // ✅ Stop animation
-            console.error("Error:", error);
-            appendMessage("bot", "Oops! Something went wrong.");
-        })
-    }
-
-
-    function showQuickReplies(options) {
-        const quickRepliesContainer = document.getElementById("quick-replies");
-        
-        if (!quickRepliesContainer) return; // ✅ Avoid modifying null container
-        
-        quickRepliesContainer.innerHTML = ""; // Clear previous quick replies
-
-        if (options.length === 0) return; // Don't show empty quick replies
-
-        options.forEach(option => {
-            const button = document.createElement("button");
-            button.classList.add("quick-reply-btn");
-            button.innerText = option;
-            button.onclick = () => sendMessage(option); // Send as user input
-            quickRepliesContainer.appendChild(button);
-        });
-    }
-
-
-    function appendMessage(sender, text) {
-        const chatContainer = document.getElementById('chat-container');
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('chat-message', sender === "user" ? 'user-message' : 'bot-message');
-        messageDiv.textContent = text;
-        chatContainer.appendChild(messageDiv);
-        scrollToBottom();
-        return messageDiv; // ✅ Return the message element so we can modify it later
-    }
-
-    function scrollToBottom() {
-        const chatContainer = document.getElementById('chat-container');
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    function handleKeyPress(event) {
-        if (event.key === "Enter") {
-            sendMessage();
+                    scrollToBottom();  // Ensure the last message is visible
+                });
         }
-    }
+
+        function startDotAnimation() {
+            const dotsElement = document.getElementById("dots");
+            let dots = "";
+            return setInterval(() => {
+                dots = dots.length < 3 ? dots + "." : "";
+                dotsElement.textContent = dots;
+            }, 500); // Updates every 0.5 seconds
+        }
+
+        function sendMessage(message = null) {
+            const inputField = document.getElementById('chat-input');
+            const quickRepliesContainer = document.getElementById("quick-replies");
+            const chatContainer = document.getElementById('chat-container');
+
+            let userMessage = message || inputField.value.trim();
+            if (userMessage === "") return;
+
+            appendMessage("user", userMessage);
+            inputField.value = ""; // Clear input field
+
+            // ✅ Append a temporary "thinking" message and ensure it's stored
+            let tempMessage = appendMessage("bot", "AL is thinking");
+
+            if (!tempMessage) {
+                console.error("Error: tempMessage is undefined.");
+                return;
+            }
+
+            // ✅ Start typing animation (dots appear one by one)
+            let dotCount = 0;
+            const typingAnimation = setInterval(() => {
+                dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
+                tempMessage.textContent = "AL is thinking" + ".".repeat(dotCount);
+            }, 500);
+
+            // ✅ Send request to Flask server
+            fetch('/send_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(typingAnimation); // ✅ Stop animation
+                tempMessage.textContent = data.response;
+
+                // ✅ Ensure quickRepliesContainer exists before modifying it
+                if (quickRepliesContainer) {
+                    if (data.quick_replies && data.quick_replies.length > 0) {
+                        showQuickReplies(data.quick_replies);
+                    } else {
+                        quickRepliesContainer.innerHTML = ""; // Clear if no quick replies
+                    }
+                }
+            })
+            .catch(error => {
+                clearInterval(typingAnimation); // ✅ Stop animation
+                console.error("Error:", error);
+                tempMessage.textContent = "Oops! Something went wrong.";
+            });
+        }
+
+        function appendMessage(sender, text) {
+            const chatContainer = document.getElementById('chat-container');
+
+            // Create message container
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('chat-message-container', sender === "user" ? 'user-message-container' : 'bot-message-container');
+
+            // Create profile image
+            const img = document.createElement('img');
+            img.classList.add('profile-pic');
+            img.src = sender === "bot" ? "../static/images/FinanceAl.png" : userProfilePic; // ✅ Uses actual user profile picture
+
+            // Create message div
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender === "user" ? 'user-message' : 'bot-message');
+            messageDiv.textContent = text;
+
+            // Append elements based on sender
+            if (sender === "bot") {
+                messageContainer.appendChild(img);
+                messageContainer.appendChild(messageDiv);
+            } else {
+                messageContainer.appendChild(messageDiv);
+                messageContainer.appendChild(img);
+            }
+
+            chatContainer.appendChild(messageContainer);
+            scrollToBottom();
+
+            return messageDiv; // ✅ Ensure the function returns the message element
+        }
+
+
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        function showQuickReplies(options) {
+            const quickRepliesContainer = document.getElementById("quick-replies");
+            
+            if (!quickRepliesContainer) return; // Avoid modifying null container
+            
+            quickRepliesContainer.innerHTML = ""; // Clear previous quick replies
+
+            if (options.length === 0) return; // Don't show empty quick replies
+
+            options.forEach(option => {
+                const button = document.createElement("button");
+                button.classList.add("quick-reply-btn");
+                button.innerText = option;
+                button.onclick = () => sendMessage(option); // Send as user input
+                quickRepliesContainer.appendChild(button);
+            });
+        }
     </script>
 </body>
 </html>
